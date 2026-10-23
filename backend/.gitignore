@@ -1,0 +1,26 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IDE ###
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.classpath
+.project
+
+### 日志与运行时 ###
+logs/
+*.log
+.logs/
+
+### 敏感配置：绝不要提交真实口令 ###
+application-local.yml
+application-prod.yml
+*.local.yml
+.env

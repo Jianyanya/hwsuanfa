@@ -1,0 +1,116 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  # 前端 Vite 通过 proxy 访问，生产环境走同域反代
+  compression:
+    enabled: true
+
+spring:
+  config:
+    import: optional:file:./application-local.yml
+  application:
+    name: algo-training
+
+  # ---- MySQL ----
+  # 密码走环境变量，不要提交真实密码到仓库
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # ⚠️ characterEncoding 必须写 Java 字符集名 UTF-8，不能写 MySQL 的 utf8mb4，
+    #    否则 Connector/J 抛 UnsupportedEncodingException: utf8mb4（已踩过）。
+    #    Connector/J 8 会自动把 UTF-8 映射到服务端的 utf8mb4。
+    url: ${DB_URL:jdbc:mysql://localhost:3306/hwsuanfa?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+      pool-name: AlgoHikari
+
+  # ---- Redis ----
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 1
+
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+  # 文件上传限制（获奖证书、头像）
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+# ---- MyBatis-Plus ----
+mybatis-plus:
+  configuration:
+    # 数据库下划线 → Java 驼峰
+    map-underscore-to-camel-case: true
+    log-impl: ${MYBATIS_LOG_IMPL:org.apache.ibatis.logging.nologging.NoLoggingImpl}
+  global-config:
+    db-config:
+      id-type: auto
+      # 逻辑删除未启用：本项目用 status 字段显式管理状态，不做物理删除
+    banner: false
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.hwsuanfa.algo.entity
+
+# ---- 应用自定义 ----
+app:
+  jwt:
+    # ⚠️ 生产环境必须通过环境变量覆盖，至少 32 字节（256 位）
+    # 生成方法：openssl rand -base64 48
+    secret: ${JWT_SECRET}
+    access-ttl: 2h
+    refresh-ttl: 14d
+
+  # 队伍成员上限（前端 config/constants.ts 的 TEAM_MAX_MEMBERS 必须与此一致）
+  team:
+    max-members: 3
+
+  register:
+    enabled: ${APP_REGISTER_ENABLED:false}
+    member-code: ${APP_REGISTER_MEMBER_CODE:}
+    admin-code: ${APP_REGISTER_ADMIN_CODE:}
+    max-attempts-per-window: 10
+    attempt-window-minutes: 60
+
+  login:
+    enabled: true
+    max-attempts-per-window: 10
+    attempt-window-minutes: 15
+
+  cors:
+    # 开发期允许的跨域来源
+    allowed-origins:
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+
+# ---- Actuator ----
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    com.hwsuanfa.algo: DEBUG
+    org.springframework.security: INFO
